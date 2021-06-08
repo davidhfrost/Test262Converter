@@ -8,11 +8,12 @@ import java.util.List;
 import java.io.File;
 
 public class Test262Converter {
-    // boolean flags used to keep track of what assertion methods need to be added
-    static boolean sameValue = false;
-    static boolean notSameValue = false;
-    static boolean throwsJS = false;
-    static boolean assertJS = false;
+    // Definitions of assertions. Important that these are variables and not magic literals for the purpose of not
+    // running into problems when the converter is called multiple times
+    static String assertFunction = "function assert(param) { return Boolean(param)}";
+    static String assertSameValueFunction = "assert.sameValue = function (actual, expected, message) { return actual === expected; }";
+    static String assertNotSameValueFunction = "assert.notSameValue = function (actual, expected, message) { return actual !== expected; }";
+    static String assertThrowsFunction = "assert.throws = function (error, func, message) { try{ func(); return false; } catch(e){ return e instanceof error;}}";
     // takes one argument: the file within the same directory as this Java file that you want to convert
     public static void main(String[] args) throws IOException {
         String[] listOfFiles = new File(System.getProperty("user.dir")).list();
@@ -36,6 +37,10 @@ public class Test262Converter {
         boolean notSameValue = false;
         boolean throwsJS = false;
         boolean assertJS = false;
+        boolean sameValueFound = false;
+        boolean notSameValueFound = false;
+        boolean throwsFound = false;
+        boolean assertFound = false;
         // int to keep track of the index variable for the expect and result variables
         int numberOfChanges = 1;
         // list to keep track of what expect values need to be appended to the end of the file
@@ -47,7 +52,14 @@ public class Test262Converter {
         // foreach loop that looks at every line in the file
         for (String currentLine : currentFile){
             // replaces any assert method with var __resultx = assert.method, where x is an index variable
-            if (currentLine.matches(".*(assert.sameValue|assert.throws|assert.notSameValue|assert[(])(.*)")){
+            if (currentLine.matches(".*(assert.sameValue|assert.throws|assert.notSameValue|assert[(])(.*)")
+                && !currentLine.matches("(function assert|assert.sameValue =|assert.notSameValue =|assert.throws =).*")
+                && !currentLine.matches(".*var __result.*")){
+                //&& !currentLine.matches("(" + assertFunction +"|" + assertNotSameValueFunction
+                //    + "|" + assertSameValueFunction + "|" + assertThrowsFunction + ").*")){
+                //&& !currentLine.matches(".*(assert.sameValue = function| assert.notSameValue = function|assert.throws = function).*")
+                //&& !currentLine.matches("function assert.*")){
+                //&& !currentLine.matches(".*("+assertFunction + "|" + assertSameValueFunction + "|" + assertNotSameValueFunction + "|" + assertThrowsFunction + ").*")){
                 if (currentLine.matches(".*(assert.sameValue).*")){
                     sameValue = true;
                 }
@@ -64,10 +76,25 @@ public class Test262Converter {
                 numberOfChanges++;
                 expectations.add(true);
                 newFile.add(currentLine);
+                continue;
             }
+            else if (currentLine.matches("assert.throws =.*")){
+                throwsFound = true;
+            }
+            else if (currentLine.matches("assert.sameValue =.*")){
+                sameValueFound = true;
+            }
+            else if (currentLine.matches("assert.notSameValue =.*")){
+                notSameValueFound = true;
+            }
+            else if (currentLine.matches("function assert.*")){
+                assertFound = true;
+            }
+            newFile.add(currentLine);
+            /*
             else {
                 newFile.add(currentLine);
-            }
+            }*/
         }
         // saves current progress
         Files.write(Paths.get(pathForFile), newFile);
@@ -80,16 +107,18 @@ public class Test262Converter {
         Files.write(Paths.get(pathForFile), currentFile);
         newFile = (ArrayList<String>) getFile(pathForFile);
         LinkedList<String> newFileWithAssertions = new LinkedList<String>();
-        newFileWithAssertions.add("function assert(param) { return Boolean(param)}");
+        if (!assertFound) {
+            newFileWithAssertions.add(assertFunction);
+        }
         // these blocks of code add the relevant assert methods
-        if (sameValue){
-            newFileWithAssertions.add("assert.sameValue = function (actual, expected, message) { return actual === expected; }");
+        if (sameValue && !sameValueFound){
+            newFileWithAssertions.add(assertSameValueFunction);
         }
-        if (notSameValue){
-            newFileWithAssertions.add("assert.notSameValue = function (actual, expected, message) { return actual !== expected; }");
+        if (notSameValue && !notSameValueFound){
+            newFileWithAssertions.add(assertNotSameValueFunction);
         }
-        if (throwsJS){
-            newFileWithAssertions.add("assert.throws = function (error, func, message) { try{ func(); return false; } catch(e){ return e instanceof error;}}");
+        if (throwsJS && !throwsFound){
+            newFileWithAssertions.add(assertThrowsFunction);
         }
         newFile.addAll(0, newFileWithAssertions);
         // saves progress
