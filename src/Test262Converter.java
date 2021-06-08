@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Main {
+public class Test262Converter {
     // boolean flags used to keep track of what assertion methods need to be added
     static boolean sameValue = false;
     static boolean notSameValue = false;
@@ -57,14 +57,16 @@ public class Main {
         Files.write(Paths.get(args[0]), currentFile);
         newFile = (ArrayList<String>) getFile(args[0]);
         LinkedList<String> newFileWithAssertions = new LinkedList<String>();
-        newFileWithAssertions.add("function assert() {");
-        newFileWithAssertions.add("}");
+        newFileWithAssertions.add("function assert(param) { return Boolean(param)}");
         // these blocks of code add the relevant assert methods
         if (sameValue){
             newFileWithAssertions.add("assert.sameValue = function (actual, expected, message) { return actual === expected; }");
         }
         if (notSameValue){
             newFileWithAssertions.add("assert.notSameValue = function (actual, expected, message) { return actual !== expected; }");
+        }
+        if (throwsJS){
+            newFileWithAssertions.add("assert.throws = function (error, func, message) { try{ func(); return false; } catch(e){ return e instanceof error;}}");
         }
         newFile.addAll(0, newFileWithAssertions);
         // saves progress
