@@ -2,17 +2,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.io.File;
 
 public class Test262Converter {
     // Definitions of assertions
-    static String assertFunction = "function assert(param) { return Boolean(param)}";
-    static String assertSameValueFunction = "assert.sameValue = function (actual, expected, message) { return actual === expected; }";
-    static String assertNotSameValueFunction = "assert.notSameValue = function (actual, expected, message) { return actual !== expected; }";
-    static String assertThrowsFunction = "assert.throws = function (error, func, message) { try{ func(); return false; } catch(e){ return e instanceof error;}}";
+    final static String assertFunction = "function assert(param) { return Boolean(param)}";
+    final static String assertSameValueFunction = "assert.sameValue = function (actual, expected, message) { return actual === expected; }";
+    final static String assertNotSameValueFunction = "assert.notSameValue = function (actual, expected, message) { return actual !== expected; }";
+    final static String assertThrowsFunction = "assert.throws = function (error, func, message) { try{ func(); return false; } catch(e){ return e instanceof error;}}";
     // takes one argument: the file within the same directory as this Java file that you want to convert
     public static void main(String[] args) throws IOException {
         // list of file names in the directory of this Java program
