@@ -59,8 +59,14 @@ public class Test262Converter {
         for (String currentLine : currentFile){
             // replaces any assert method with var __resultx = assert.method, where x is an index variable
             // if an assertion method is called, it must be converted
+            // The first condition means "this string has assert.sameValue, assert.throws, assert.notSameValue, or assert("
             if (currentLine.matches(".*(assert.sameValue|assert.throws|assert.notSameValue|assert[(])(.*)")
+                    // the second condition means "this string does not start with function assert, assert.sameValue =,
+                    // assert.notSameValue =, or assert.throws =
+                    // this second condition is used to ensure that this if conditional only evaluates to true
+                    // for lines in which an assertion is used
                 && !currentLine.matches("(function assert|assert.sameValue =|assert.notSameValue =|assert.throws =).*")
+                    // the third conditional means "this string does not have var __result as a substring of it"
                 && !currentLine.matches(".*var __result.*")){
                 // the next four if conditionals check to see which assertion was used. We'll keep track of these
                 // to know which assertions we need to define.
